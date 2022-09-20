@@ -7,7 +7,7 @@ set -o pipefail
 # Can retrieve cloudflare Domain id and list zone's, because, lazy
 
 # Place at:
-# curl https://raw.githubusercontent.com/yulewang/cloudflare-api-v4-ddns/master/cf-v4-ddns.sh > /usr/local/bin/cf-ddns.sh && chmod +x /usr/local/bin/cf-ddns.sh
+# curl https://raw.githubusercontent.com/akiicat/cloudflare-api-v4-ddns/master/cf-v4-ddns.sh > /usr/local/bin/cf-ddns.sh && chmod +x /usr/local/bin/cf-ddns.sh
 # run `crontab -e` and add next line:
 # */1 * * * * /usr/local/bin/cf-ddns.sh >/dev/null 2>&1
 # or you need log:
@@ -23,6 +23,7 @@ set -o pipefail
 
 # Optional flags:
 #            -f false|true \           # force dns update, disregard local stored ip
+#            -d 8.8.8.8                # assign an ip address
 
 # default config
 
@@ -48,6 +49,8 @@ CFTTL=120
 # Ignore local file, update ip anyway
 FORCE=false
 
+WAN_IP=
+
 WANIPSITE="http://ipv4.icanhazip.com"
 
 # Site to retrieve WAN ip, other examples are: bot.whatismyipaddress.com, https://api.ipify.org/ ...
@@ -61,7 +64,7 @@ else
 fi
 
 # get parameter
-while getopts k:u:h:z:t:f: opts; do
+while getopts k:u:h:z:t:f:d: opts; do
   case ${opts} in
     k) CFKEY=${OPTARG} ;;
     u) CFUSER=${OPTARG} ;;
@@ -69,6 +72,7 @@ while getopts k:u:h:z:t:f: opts; do
     z) CFZONE_NAME=${OPTARG} ;;
     t) CFRECORD_TYPE=${OPTARG} ;;
     f) FORCE=${OPTARG} ;;
+    d) WAN_IP=${WAN_IP} ;;
   esac
 done
 
@@ -83,7 +87,7 @@ if [ "$CFUSER" = "" ]; then
   echo "and save in ${0} or using the -u flag"
   exit 2
 fi
-if [ "$CFRECORD_NAME" = "" ]; then 
+if [ "$CFRECORD_NAME" = "" ]; then
   echo "Missing hostname, what host do you want to update?"
   echo "save in ${0} or using the -h flag"
   exit 2
@@ -96,7 +100,9 @@ if [ "$CFRECORD_NAME" != "$CFZONE_NAME" ] && ! [ -z "${CFRECORD_NAME##*$CFZONE_N
 fi
 
 # Get current and old WAN ip
-WAN_IP=`curl -s ${WANIPSITE}`
+if [ "$WAN_IP" = "" ]; then
+  WAN_IP=`curl -s ${WANIPSITE}`
+fi
 WAN_IP_FILE=$HOME/.cf-wan_ip_$CFRECORD_NAME.txt
 if [ -f $WAN_IP_FILE ]; then
   OLD_WAN_IP=`cat $WAN_IP_FILE`
