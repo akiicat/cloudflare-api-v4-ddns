@@ -72,7 +72,7 @@ while getopts k:u:h:z:t:f:d: opts; do
     z) CFZONE_NAME=${OPTARG} ;;
     t) CFRECORD_TYPE=${OPTARG} ;;
     f) FORCE=${OPTARG} ;;
-    d) WAN_IP=${WAN_IP} ;;
+    d) WAN_IP=${OPTARG} ;;
   esac
 done
 
